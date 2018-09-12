@@ -1,0 +1,20 @@
+def mergeOther(listOfTrees,treeName):
+    outFileName = getOutputFileName(listOfTrees[0])
+    
+    firstFile = ROOT.TFile(listOfTrees[0],'read')
+    firstTree = firstFile.Get(treeName)
+    firstTree.SetBranchStatus('*',1)
+    
+    outFile = ROOT.TFile(outFileName,'recreate')
+    outTree = firstTree.CloneTree()
+    
+    for elem in listOfTrees[1:]:
+        tfile = ROOT.TFile(elem,'read')
+        ttree = tfile.Get(treeName)
+        ttree.SetBranchStatus('*',1)
+        outTree.CopyEntries(ttree)
+    
+    outFile.cd()
+    outTree.Write()
+    outFile.Close()
+    print 'merged file %s' % (outFileName,)

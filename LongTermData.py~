@@ -1,0 +1,183 @@
+# David Tersegno
+# April 29, 2014
+# Makes a csv file to make importing longterm run data into mathematica easier.
+#
+#
+#
+
+import ROOT as R
+import sys
+from array import array
+
+#infolder = "./rootfiles/" #where the root files are. a folder that contains nonclus/----.root and clus/----.root
+#outfolder = "./" #where to place the output
+#runmin = 0 #minimum run to check.
+runmin = sys.argv[1]
+runmax = sys.argv[2] #maximum run to check
+
+runmin = int(runmin)
+runmax = int(runmax)
+
+#Get Run information from currentruninfo.txt
+f = open("currentruninfo.txt","r")
+prefix = f.readline()[:-1]
+rawdata = f.readline()[:-1]
+infolder = f.readline()[:-1]
+outfolder = infolder
+#print prefix, folder
+f.close()
+
+tm = array('f',[ 0. ])
+temp = array('f',[ 0. ])
+mp = array('f',[ 0. ])
+mpe = array('f',[ 0. ])
+chi2 = array('f',[ 0. ])
+md_c = array('f',[ 0. ])
+mde_c = array('f',[ 0. ])
+md_s = array('f',[ 0. ])
+mde_s = array('f',[ 0. ])
+
+RFile_Name = 'LTR_Summary.root'
+RTree = R.TTree('ltr','LTRMeas')
+RTree.Branch('time',tm,'time/F')
+RTree.Branch('temp',temp,'temp/F')
+RTree.Branch('MPV',mp,'MPV/F')
+RTree.Branch('MPVerr',mpe,'MPVerr/F')
+RTree.Branch('Chi2',chi2,'chi2/F')
+RTree.Branch('med_clust',md_c,'med_clust/F')
+RTree.Branch('mderr_clust',mde_c,'mderr_clust/F')
+RTree.Branch('med_seed',md_s,'med_seed/F')
+RTree.Branch('mderr_seed',mde_s,'mderr_seed/F')
+
+#lab regions:
+regions = [
+    #4,
+    #5,
+    #6,
+    8,
+    #9,
+    #10
+    ]
+
+fc = [] #creating a list of clustered root files to access
+fnc = [] #creating a list of nonclustered root files to access
+MPVs = []
+MPVgraph = R.TGraphErrors(runmax+1)
+median = []
+median_c = []
+medgraph = R.TGraphErrors(runmax+1)
+medgraph_c = R.TGraphErrors(runmax+1)
+
+for trial in range(runmin , runmax+1):
+    fc.append(R.TFile(infolder+prefix+"_"+str(trial)+".root"))
+    print infolder+prefix+"_T"+str(trial)+".root"
+    #fnc.append(R.TFile(infolder+"/nonclus/FTH200P_LTR10_T"+str(trial)+".root"))
+
+for r in regions:
+    region = 13 - r
+    fileLocName = outfolder + "/"+prefix+"_Summary_"+str(region)+".csv"
+    dataFile = open(fileLocName,"w")
+    rootfile = R.TFile()
+
+    print "Writing to: " + fileLocName
+    
+    dataFile.write(",Start") #header, and...
+    for trial in range(runmin ,runmax+1): #...horizontal list of trials
+        dataFile.write(",T"+str(trial))
+
+    dataFile.write("\n Time \n Time Elapsed \n Total Events \n")
+
+    dataFile.write("Passed Events,") #record events in histograms
+    for trial in range(runmin ,runmax+1):
+        print "Writing number of events for trial "+str(trial)
+#        dataFile.write(","+str(fc[trial].Get("R"+str(region)+" Signal").GetEntries())) #reinstate this and delete the following if not doing FTH200P_LTR4_Unirr
+        #dataFile.write(","+str(fc[trial].Get("R"+str(region)+" Signal").GetEntries()))
+
+    dataFile.write("\n EventPercent")
+
+    dataFile.write("\n MPVclustered,") #records MPV
+
+    for trial in range(runmin, runmax+1):
+        #Getting MPV and time values from ROOT file
+        print "Writing MPV value for trial "+str(trial)
+        #print fc[trial], "R"+str(region)+"_MPV"
+        #print "ehllo", fc[trial].Get(("StartTime")[0])
+        tm[0]=fc[trial].Get("StartTime")[0]
+	temp[0] = fc[trial].Get("StartTemp")[0]
+        #tm[0]=(float(trial))
+        dataFile.write(","+str(fc[trial].Get("R"+str(region)+"_MPV")[0]))
+        MPVs.append(fc[trial].Get("R"+str(region)+"_MPV")[0])
+        MPVgraph.SetPoint(trial,tm[0],MPVs[trial])
+        #MPVgraph.SetPoint(trial,trial,MPVs[trial])
+        MPVgraph.SetPointError(trial,0,.1)
+        mp[0]=fc[trial].Get("R"+str(region)+"_MPV")[0]
+	chi2[0] = fc[trial].Get("Chi2")[0]
+        mpe[0]=0.1
+        print "Done writing values for trial "+str(trial)
+
+        #Getting clustered Median values from ROOT file
+        hist_name = 'R'+str(region)+' Signal_1000Bins_clust'
+        print hist_name, fc[trial]
+        h = fc[trial].Get(hist_name)
+        hentries = h.GetEntries()
+        counter = 0
+        ticker = 0
+        median_c.append(0)
+        meanerror = h.GetMeanError()
+        #print trial, median
+        while median_c[trial] == 0:
+            counter += h[ticker]
+            if counter >= hentries/2:
+                median_c[trial] = ((ticker + 0.5)/10)
+            ticker += 1
+        print "The T" + str(trial) + " cluster median is " + str(median_c[trial])
+        medgraph_c.SetPoint(trial,tm[0],median_c[trial])
+        medgraph_c.SetPointError(trial,0,1.2*meanerror)
+        md_c[0]=median_c[trial]
+        mde_c[0]=meanerror
+
+        #Getting seed Median values from ROOT file
+        hist_name = 'R'+str(region)+' Signal_1000Bins'
+        print hist_name, fc[trial]
+        h = fc[trial].Get(hist_name)
+        hentries = h.GetEntries()
+        counter = 0
+        ticker = 0
+        median.append(0)
+        meanerror = h.GetMeanError()
+        #print trial, median
+        while median[trial] == 0:
+            counter += h[ticker]
+            if counter >= hentries/2:
+                median[trial] = ((ticker + 0.5)/10)
+            ticker += 1
+        print "The T" + str(trial) + " median is " + str(median[trial])
+        medgraph.SetPoint(trial,tm[0],median[trial])
+        medgraph.SetPointError(trial,0,1.2*meanerror)
+        md_s[0]=median[trial]
+        mde_s[0]=meanerror
+
+        #print "tree", tm, mp, mpe, md, mde
+        RTree.Fill()
+
+#dataFile.write("\n MPVnocluster,")
+#for trial in range(runmin,runmax+1):
+#    dataFile.write(","+str(fnc[trial].Get("R5_MPV")[0]))
+
+#dataFile.write("\n MedianClustered,")
+
+#dataFile.write("\n MedianNoClustered,")
+
+    dataFile.close()
+
+RFile = R.TFile(outfolder+"/"+prefix+"_Summary.root",'RECREATE')
+#RTree.Fill()
+RTree.Write()
+MPVgraph.SetName(prefix+"_MPV")
+MPVgraph.Write()
+medgraph_c.SetName(prefix+"_Median_cluster")
+medgraph_c.Write()
+medgraph.SetName(prefix+"_Median")
+medgraph.Write()
+RFile.Close()
+

@@ -1,0 +1,24 @@
+#!/bin/bash
+# My first script
+
+echo "Hello World!"
+
+nohup python stream_auto.py 0 9 >& logfiles/log1.txt &
+nohup python stream_auto.py 10 29 >& logfiles/log2.txt &
+nohup python stream_auto.py 20 39 >& log3.txt &
+nohup python stream_auto.py 30 39 >& log4.txt &
+nohup python stream_auto.py 40 43 >& log5.txt &
+nohup python stream_auto.py 50 59 >& log6.txt &
+nohup python stream_auto.py 60 69 >& log7.txt &
+nohup python stream_auto.py 70 79 >& log8.txt &
+nohup python stream_auto.py 80 89 >& log9.txt &
+nohup python stream_auto.py 90 99 >& log10.txt &
+nohup python stream_auto.py 100 109 >& log11.txt &
+nohup python stream_auto.py 110 119 >& log12.txt &
+nohup python stream_auto.py 120 129 >& log13.txt &
+nohup python stream_auto.py 130 139 >& log14.txt &
+nohup python stream_auto.py 140 149 >& log15.txt &
+nohup python stream_auto.py 150 159 >& log16.txt &
+nohup python stream_auto.py 160 168 >& log17.txt &
+#nohup python stream_auto.py 170 179 >& log18.txt &
+

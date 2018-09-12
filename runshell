@@ -1,0 +1,6 @@
+#!/bin/bash
+nohup python stream_auto.py 0 5 FTH200Y_Apr6_R4.info >&logfiles/log0.txt &
+nohup python stream_auto.py 6 11 FTH200Y_Apr6_R4.info >&logfiles/log1.txt &
+nohup python stream_auto.py 12 17 FTH200Y_Apr6_R4.info >&logfiles/log2.txt &
+nohup python stream_auto.py 18 23 FTH200Y_Apr6_R4.info >&logfiles/log3.txt &
+nohup python stream_auto.py 24 24 FTH200Y_Apr6_R4.info >&logfiles/log4.txt &

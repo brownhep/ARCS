@@ -1,0 +1,5 @@
+#!/bin/bash 
+python dolandau.py 0 77 currentruninfo.txt
+python strip_info.py 0 77 currentruninfo.txt
+python LongTermData.py currentruninfo.txt
+python HitDataPlots.py currentruninfo.txt

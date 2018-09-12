@@ -1,0 +1,314 @@
+import ROOT as R
+import sys
+import time
+import os.path
+from datetime import datetime, date, time, timedelta
+from array import array
+
+
+def get_tempdata(file_name, outfolder, filePrefix):
+
+    time = array('f',[0.])
+    dewp = array('f',[0.])
+    Vpelt = array('f',[0.])
+    Ipelt = array('f',[0.])
+    chuckT = array('f',[0.])
+    airT = array('f',[0.])
+    RH = array('f',[0.])
+
+    RTree = R.TTree('env','Environment Data')
+    RTree.Branch('time',time,'time/F')
+    RTree.Branch('dewp',dewp,'dewp/F')
+    RTree.Branch('Vpelt',Vpelt,'Vpelt/F')
+    RTree.Branch('Ipelt',Ipelt,'Ipelt/F')
+    RTree.Branch('chuckT',chuckT,'chuckT/F')
+    RTree.Branch('airT',airT,'airT/F')
+    RTree.Branch('RH',RH,'RH/F')
+
+    #Opens environmental data file
+    print "Reading in environmental data from file: ", file_name
+    if os.path.isfile(file_name):
+        env_file = open(file_name,'r')
+        cnt = 0
+        #temp_data = [[0 for x in xrange(7)]]
+	temp_data = []
+        t_data = [0 for x in xrange(7)]
+        for line in env_file:
+            env_data = line.split('\t')
+            for i in xrange(7): t_data[i] = float(env_data[i])
+	    #print t_data
+            temp_data.append([])
+            for i in xrange(7): temp_data[cnt].append(t_data[i])
+	    #print temp_data
+            time[0] = float(env_data[0])/(60*60*24) - 40500
+            dewp[0] = float(env_data[1])
+            chuckT[0] = float(env_data[2])
+            airT[0] = float(env_data[3])
+            RH[0] = float(env_data[4])
+            Vpelt[0] = float(env_data[5])
+            Ipelt[0] = float(env_data[6])
+            RTree.Fill()
+            cnt += 1
+
+        RFile = R.TFile(outfolder+filePrefix+"_Env.root",'RECREATE')
+        RTree.Write()
+        RFile.Close()
+
+    else: 
+        print "Environmental data file does not exist"
+        temp_data = 0
+
+    #print temp_data
+    return temp_data
+
+
+def get_temp(t_data, time, start=0):
+
+    chuckT = [0,0]
+
+    if t_data != 0:
+        ti0 = t_data[0][0]
+        Ti0 = t_data[0][2]
+    	for i in xrange(start,len(t_data)):
+	    #print 'debug ', i, t_data[i][0], time, t_data[i][2]
+            if t_data[i][0] < time:
+                ti0 = t_data[i][0]
+                Ti0 = t_data[i][2]
+            	#print 'a',ti0,time,float(ti0)-float(time)
+            	continue
+            else:
+                ti = t_data[i][0]
+                Ti = t_data[i][2]
+                chuckT = [Ti0 + (time-ti0)*(Ti-Ti0)/(ti-ti0),i-1]
+                break
+
+    return chuckT
+
+
+def get_signal(file_name, scale = 1, T_Array=0):
+
+    file = open(file_name, 'r')
+    
+    Sig_Data = R.TProfile(extra + ' Data',extra + ' Data',32, 0, 32)
+    Sig_Data.Sumw2()
+    Sig_Data.SetOption('colz')
+
+    h_name_fine_bin = extra + ' Signal_' + '1000' + 'Bins'
+    h_name_fine_bin_clust = extra + ' Signal_' + '1000' + 'Bins_clust'
+    h_name_coarse_bin_clust = extra + ' Signal_' + '100' + 'Bins_clust'
+    SignalHist1 = R.TH1D(h_name_fine_bin, h_name_fine_bin, 1000, 0, 100*scale)
+    SignalHist1.Sumw2()
+    SignalHist1.SetOption('hist')
+    SignalHist2 = R.TH1D(h_name_fine_bin_clust, h_name_fine_bin_clust, 1000, 0, 100*scale)
+    SignalHist2.Sumw2()
+    SignalHist2.SetOption('hist')
+    SignalHist3 = R.TH1D(h_name_coarse_bin_clust, h_name_coarse_bin_clust, 100, 0, 100*scale)
+    SignalHist3.Sumw2()
+    SignalHist3.SetOption('hist')
+    EtaHist = R.TH1D("Eta","Eta", 100, 0, 1)
+    EtaHist.Sumw2()
+    EtaHist.SetOption('hist')
+
+    ical = array('i', [0])
+    strip = array('i', [0])
+    charge = array ('i', [0.])
+    T_Chuck = array ('f', [0.])
+
+    #Creates TObject to store time
+    StartTime = R.TVectorF(1)
+    StartTemp = R.TVectorF(1)
+    
+    RTree = R.TTree('hits', 'Hit Data')
+    RTree.Branch('ical',ical,'ical/I')
+    RTree.Branch('strip',strip,'strip/I')
+    RTree.Branch('charge',charge,'charge/F')
+    RTree.Branch('T_Chuck',T_Chuck,'T_Chuck/F')
+
+    event_data = []
+    StartTemp[0] = -99.0
+    event = 0
+    Tindex = 0
+
+    for line in file:
+        #Read out time from file
+        if line[0:4] == 'Date':
+            rdate = line.split(' ')[1].split('.')
+            rtime = line.split(' ')[3].split(':')
+            runtime = datetime(2000+int(rdate[2]),int(rdate[1]),int(rdate[0]),int(rtime[0]),int(rtime[1]),int(rtime[2])) - datetime(1904,1,1,0,0,0,0)
+            lvtime = 24*60*60*float(runtime.days) + float(runtime.seconds/86400.00000)
+            print rdate, rtime, runtime, runtime.seconds, lvtime
+
+        if line.count(',') > 3:
+            event += 1
+	    if event % 4 == 1:
+	    	tmstamp = float(line.split('\t')[0])
+		tca = get_temp (T_Array, tmstamp, Tindex)
+		T_Chuck[0] = tca[0]
+		Tindex = tca[1]
+		if StartTemp[0] < 90: StartTemp[0] = T_Chuck[0]
+
+
+            if event % 4000 == 0: print event/4
+            
+            full_event = [float(x) for x in line.replace('\r\t','').split('\t')[-1].split(',')]
+            if scale != 1: event_data += [x*192000.0/full_event[-1] for x in full_event[12:-1]]
+            else: event_data += full_event[12:-1]
+            
+            if event % 4 == 0:
+		eventno[0] = event/4
+                subtracted_event = [event_data[i] - Ped.GetBinContent(i+1) for i in range(512)]
+                apv_event = subtracted_event[(region+1)/4*128:(1+(region+1)/4)*128]
+                reg_event = subtracted_event[32*(region+1):32*(region+2)]
+                
+                for chan in range(len(reg_event)):
+                    Sig_Data.Fill(chan, reg_event[chan])
+
+                #print max(subtracted_event), subtracted_event.index(max(subtracted_event))/32 - 1, max(reg_event), reg_event.index(max(reg_event))
+                #raw_input('')
+                
+                eventSN = []
+                for i in range(512):
+                    if Ped.GetBinError(i+1) == 0: eventSN.append(0)
+                    else: eventSN.append( subtracted_event[i]/float(Ped.GetBinError(i+1)) )
+            
+            
+                apvSN = eventSN[(region+1)/4*128:(1+(region+1)/4)*128]
+                regSN = eventSN[32*(region+1):32*(region+2)]
+                
+                chan_nums = [i for i in range(32)]
+                
+                
+                good_regSN = [regSN[i] for i in range(32) if i not in bad_chans]
+                goodchan_nums = [chan_nums[i] for i in range(32) if i not in bad_chans]
+                
+                
+                good_max_reg_chan = good_regSN.index(max(good_regSN))
+                max_reg_chan = goodchan_nums[good_max_reg_chan]
+                
+                if max_reg_chan in bad_chans: print max_reg_chan
+                max_apv_chan = ((region+1)%4)*32 + max_reg_chan
+                max_all_chan = (region+1)*32 + max_reg_chan
+                hit_strip[0] = max_apv_chan
+                
+                #max_reg_chan = reg_event.index(max(reg_event))
+                #max_apv_chan = ((region+1)%4)*32 + max_reg_chan
+                #max_all_chan = (region+1)*32 + max_reg_chan
+                
+                CM = sum(apv_event) - apv_event[max_apv_chan]
+                count = 127.0
+                if max_apv_chan%32 > 0:
+                    CM -= apv_event[max_apv_chan-1]
+                    count -= 1
+                if max_apv_chan%32 < 31:
+                    CM -= apv_event[max_apv_chan+1]
+                    count -= 1
+                
+                CM /= count
+                CMs.Fill(CM)
+                CM_noise[0] = CM
+		NoisyEvt = False
+		if abs(CM) > 5:	NoisyEvt = True
+                
+                if max_reg_chan in bad_chans:
+                    event_data = []
+                    NbadChans+=1
+                    continue
+            
+                #if( apv_event[max_apv_chan] > 10): print apv_event[max_apv_chan], CM
+                    
+                #Fill unclustered histogram and tree brances
+                seed_signal = apv_event[max_apv_chan] - CM
+		total_signal = seed_signal
+                strip_charge[0] = seed_signal
+
+		#If hit is not on edges record entire 4 strip cluster
+		#Possibly a bias if significant number of apv_evt[chan-1] = apv_evt[chan+1]
+		wholecluster = False
+		if apv_event[max_apv_chan+1] > apv_event[max_apv_chan-1]:
+			if ((max_reg_chan + 2) < 32) and ((max_reg_chan - 1) > -1):
+				L1[0] = apv_event[max_apv_chan] - CM
+				R1[0] = apv_event[max_apv_chan+1] - CM
+				L2[0] = apv_event[max_apv_chan-1] - CM
+				R2[0] = apv_event[max_apv_chan+2] - CM
+				wholecluster = True
+		else:
+			if ((max_reg_chan + 1) < 32) and ((max_reg_chan - 2) > -1):
+				L1[0] = apv_event[max_apv_chan-1] - CM
+				R1[0] = apv_event[max_apv_chan] - CM
+				L2[0] = apv_event[max_apv_chan-2] - CM
+				R2[0] = apv_event[max_apv_chan+1] - CM
+				wholecluster = True
+
+                #Do clustering and fill histograms. Change from 2 -> 1 times the noise to get counted in cluster
+                if (max_reg_chan + 1) < 32:
+                    if (apv_event[max_apv_chan+1]-CM) > 1*Ped.GetBinError(max_all_chan + 1 + 1)*R.sqrt(Ped.GetBinEntries(max_all_chan + 1 + 1)): total_signal += apv_event[max_apv_chan+1] - CM
+                    #SR1_charge[0] = apv_event[max_apv_chan+1] - CM
+                    #if (max_reg_chan + 2) < 32:  SR2_charge[0] = apv_event[max_apv_chan+2] - CM
+                if (max_reg_chan - 1) > -1:
+                    if (apv_event[max_apv_chan-1]-CM) > 1*Ped.GetBinError(max_all_chan - 1 + 1)*R.sqrt(Ped.GetBinEntries(max_all_chan - 1 + 1)): total_signal += apv_event[max_apv_chan-1] - CM
+                    #SL1_charge[0] = apv_event[max_apv_chan-1] - CM
+                    #if (max_reg_chan - 2) > -1:  SL2_charge[0] = apv_event[max_apv_chan-2] - CM
+                        
+                clust_charge[0] = total_signal
+
+                #Mark soft events (less than 3x noise) in tree (was previously 5x noise)
+                soft_evt[0] = 0
+                sig_noise[0] = float(reg_event[max_reg_chan])/(Ped.GetBinError(max_all_chan + 1)*R.sqrt(Ped.GetBinEntries(max_all_chan + 1)))
+                if (reg_event[max_reg_chan]-CM) < 3*Ped.GetBinError(max_all_chan + 1)*R.sqrt(Ped.GetBinEntries(max_all_chan + 1)):
+                    soft_evt[0] = 1
+
+		if wholecluster and not(NoisyEvt):
+			R0 = R1[0]
+			L0 = L1[0]
+			if R1[0] < 0:  R0 = 0
+			if L1[0] < 0:  L0 = 0
+			if (R0 + L0) == 0:
+				print "zero alert ",max_reg_chan,reg_event[max_reg_chan],Ped.GetBinError(max_all_chan + 1),Ped.GetBinEntries(max_all_chan + 1),CM,R1[0],L1[0]
+			if soft_evt[0]==0: 
+				eta[0] = R0/(R0+L0)
+				EtaHist.Fill(eta[0])
+                	RTree.Fill()
+
+                if (reg_event[max_reg_chan]-CM) < 3*Ped.GetBinError(max_all_chan + 1)*R.sqrt(Ped.GetBinEntries(max_all_chan + 1)):
+                    NsoftSignal+=1
+                    event_data = []
+                    continue
+		if NoisyEvt:
+                    NnoisyEvts+=1
+                    event_data = []
+                    continue
+                
+                SignalHist1.Fill(seed_signal)
+                SignalHist2.Fill(total_signal)
+                SignalHist3.Fill(total_signal)
+
+                
+                event_data = []
+
+    file.close()
+
+    print 'BAD EVENTS:',NbadChans
+    print 'SOFT EVENTS:',NsoftSignal
+    print 'NOISY EVENTS:',NnoisyEvts
+
+    if RFile_name != '':
+        RFile = R.TFile(RFile_name,'UPDATE')
+        StartTime[0] = tmstamp/(60*60*24) - 40500 #Get time in days since Jan 1, 1904 + 40500 days
+        StartTime.Write("StartTime")
+	StartTemp.Write("StartTemp")
+	CMs.Write()
+	Sig_Data.Write()
+        SignalHist1.Write()
+        SignalHist2.Write()
+        SignalHist3.Write()
+	EtaHist.Write()
+        #RTree.Write()
+        RFile.Close()
+
+    	RhdFile_name = RFile_name[:-5] + "_hd.root"
+    	print RhdFile_name
+    	RhdFile = R.TFile(RhdFile_name,'RECREATE')
+    	RTree.Write()
+    	RhdFile.Close()
+
+

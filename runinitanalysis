@@ -1,0 +1,3 @@
+python makenohuplist.py
+chmod +x runshell
+./runshell

@@ -1,0 +1,3 @@
+python dolandau.py -1 181
+python strip_info -1 181
+python LongTermData.py -1 181

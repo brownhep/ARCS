@@ -1,0 +1,3 @@
+python makeanalysisshell.py
+chmod +x analysisshell
+./analysisshell

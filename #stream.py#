@@ -1,0 +1,111 @@
+import ROOT as R
+from Methods import *
+import time
+
+R.gROOT.ProcessLine('.L Code/LandauFit.C+')
+
+filePrefix = sys.argv[1]    #ex: FTH200P_LTR10
+folder = sys.argv[2]	#Where data files are stored. ex: '/home/dtersegno/Raw_Data/LongTerm/FTH200P_R10/'
+runMin = sys.argv[3]    #The minimum and maximum run numbers tolook at.
+runMax = sys.argv[4]
+
+getSignalCourseBinningMPV = 1 # 1 -> yes #clustered
+getSignalFineBinningMPV = 0 #clustered, no landau
+getSignalFineBinning = 0 #single strip
+getEta = 0
+
+#scale allows for conversion of ADC counts to another value. The 192k value is ~num electrons.
+#scale = 192000/255
+scale = 1
+
+Volts = [
+	#'50V',
+	#'75V',
+	#'100V',
+	#'125V',
+	'150V',
+	#'175V',
+	#'200V',
+	#'225V',
+	#'250V',
+	#'275V',
+	#'300V',
+	#'400V',
+	#'450V',
+	#'500V',
+	#'525V',
+	#'550V',
+	#'575V',
+	#'600V',
+	#'650V',
+	#'700V',
+	#'750V',
+	#'800V',
+	#'900V',
+	#'1000V',
+	 ]
+	 
+regions = [
+	#1,
+	#2,
+	#3,
+	4,
+	#5,
+	#6,
+	#7,
+	#8,
+	#9,
+	#10,
+	#11,
+	#12
+   ]
+for runNum in range(int(runMin),int(runMax)+1):
+	for volt in reversed(Volts):
+
+		root_name = filePrefix + "_T" + str(runNum)
+		#Creates Root File for each voltage to store Plots 
+		RFile_name = root_name + '.root'
+		RFile = R.TFile(RFile_name, 'RECREATE')
+		RFile.Close()
+
+		
+		#Generates the Pre-Pedestal
+		print "Prepedestal for " + root_name +", " + volt
+		preped_name = folder + 'Raw_Data_'+root_name + '_Ped.dat'
+		preped = get_preped(preped_name, 'PrePed', RFile_name, 1)
+
+		for i in regions:
+			file_name = folder+'Raw_Data_'+root_name+'_R'
+			file_name+=str(i)+'.dat'  
+			#Generates Pedestal from Signal Data
+			print "Pedestal for " + root_name +", " + volt + ", R" + str(i)
+			ped = get_pedestal(file_name, i, preped, 'R'+str(13-(i)),RFile_name,scale)
+			#Locates the bad Channels
+			bad_chans = find_bad_chans(file_name, i, ped, 'R'+str(13-(i)),RFile_name,scale)
+			#Calculates Signal + Fits Landau/Gaussian
+			if getSignalCourseBinningMPV == 1:
+				get_signal(file_name, i, ped, 'R'+str(13-(i)),RFile_name,bad_chans, scale, 100, 1, 1, start=10) #last three parameters: numbins, doclustering, dolandau
+			if getSignalFineBinningMPV == 1:
+				get_signal(file_name, i, ped, 'R'+str(13-(i)),RFile_name,bad_chans, scale, 1000, 1, 0, start=10) #last three parameters: numbins, doclustering, dolandau
+			if getSignalFineBinning == 1:
+				get_signal(file_name, i, ped, 'R'+str(13-(i)),RFile_name,bad_chans, scale, 1000, 0, 0, start=10)
+			if getEta == 1:
+				file_name = folder+'Raw_Data_'+root_name+'_R'
+				print file_name + str(i)
+        
+				#if i+1<10: file_name += '0'
+				file_name+=str(i)+'.dat'
+        
+				#Generates Pedestal from Signal Data
+				ped = []
+				#2
+				#ped = get_pedestal2(file_name,start_chan[i-1], end_chan[i-1], preped, 'R'+str(i)+'_'+volt+'_'+mat+'irr_'+temp+'C',RFile_name,scale)
+				ped = get_pedestal2(file_name,start_chan[0], end_chan[0], preped, 'R'+str(i)+'_'+volt+'_'+mat+'_'+temp+'C',RFile_name,scale)
+        
+				CMsubtracted_noise = get_CMNoi(preped_name, preped, CMreg, ped[1], title, RFile_name, 1)
+
+
+				#3
+				#max_hit = get_signalDoubleMetal_CountMax(file_name, start_chan[0], end_chan[0], ped[0], CMreg, ped[1], CMsubtracted_noise,  'R'+str(i)+'_'+volt+'_'+mat+'irr_'+temp+'C', RFile_name,dd[0], scale, start=10)
+				#get_signalDoubleMetal_Eta(file_name, start_chan[0], end_chan[0], ped[0], CMreg, ped[1], CMsubtracted_noise,  'R'+str(i)+'_'+volt+'_'+mat+'irr_'+temp+'C', RFile_name, max_hit, dd[0], scale, start=10)
+				get_signalDoubleMetal_strip(file_name, start_chan[0], end_chan[0], ped[0], CMreg, ped[1], CMsubtracted_noise,  'R'+str(i)+'_'+volt+'_'+mat+'_'+temp+'C', RFile_name,  dd[0], scale, start=10)

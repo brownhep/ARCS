@@ -1,0 +1,7 @@
+TCanvas *c1 = new TCanvas ("c1","Test",700,900)
+TPad *p1 = new TPad("a","b",200,400) 
+TH1F *h1 = new TH1F("h1","hello",50,0,20)
+TF1 *f1 = TF1("fl","sin(x)/x",0,20)
+f1->Draw()
+
+ 

@@ -1,0 +1,3 @@
+python makesignalonlylist.py
+chmod +x runshell
+./runshell

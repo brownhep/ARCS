@@ -1,0 +1,52 @@
+
+# DO NOT DELETE
+
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TList.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TSeqCollection.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TCollection.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TObject.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/Rtypes.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/RConfig.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/RVersion.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/DllImport.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/Rtypeinfo.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/snprintf.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/strlcpy.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TGenericClassInfo.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TSchemaHelper.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TStorage.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TVersionCheck.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/Riosfwd.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TBuffer.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TIterator.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TString.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TMathBase.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TFile.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TDirectoryFile.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TDirectory.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TNamed.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TDatime.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TUUID.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TMap.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/THashTable.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TUrl.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TTree.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TBranch.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TObjArray.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TAttFill.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TDataType.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TDictionary.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/Property.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/ESTLType.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TAttLine.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TAttMarker.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TArrayD.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TArray.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TArrayI.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TClass.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TObjString.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/ThreadLocalStorage.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/RConfigure.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/TVirtualTreePlayer.h
+./mergetrees_c.so: /opt/root/root_v5.34.21/include/cintdictversion.h /opt/root/root_v5.34.21/include/RVersion.h
+mergetrees_c__ROOTBUILDVERSION= 5.34/21
